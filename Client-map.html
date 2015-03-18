@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+
+    <!-- Always force latest IE rendering engine (even in intranet) & Chrome Frame
+    Remove this if you use the .htaccess -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="description" content="">
+    <meta name="author" content="cjoo">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Cj Choi</title>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap-theme.min.css">
+
+    <style>
+      html { height: 100% }
+      body { height: 100%; margin: 0; padding: 0 }
+      .navbar { margin-bottom: 0px;}
+      #map {
+        width:100%;
+        height:100%;
+    }
+    #marker-tooltip {
+        display: none;
+        position:absolute;
+        width: 300px;
+        height: 200px;
+        background-color: #ccc;
+        margin: 15px;
+    }
+</style>
+
+
+<!-- jQuery -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+
+<script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+
+<script>
+    var markers = {};
+    var getMarkerUniqueId= function(lat, lng) {
+        return lat + '_' + lng;
+    }
+    var getLatLng = function(lat, lng) {
+        return new google.maps.LatLng(lat, lng);
+    };
+
+    function calcTime(offset) {
+        var d = new Date();
+        var utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+        var nd = new Date(utc + (1000*offset));
+
+        return nd.toLocaleString();
+    }
+
+    function utcTime() {
+        var d = new Date();
+        return d.toLocaleString();
+    }
+    function initialize() {
+
+        var pos = new google.maps.LatLng(43.714604, 0);
+
+        var map = new google.maps.Map($('#map')[0], {
+            center: pos,
+            zoom: 3,
+            mapTypeId: google.maps.MapTypeId.ROAD
+        });
+
+        var addMarker = google.maps.event.addListener(map, 'rightclick', function(e) {
+            console.log('click');
+            var lat = e.latLng.lat(); // lat of clicked point
+            var lng = e.latLng.lng(); // lng of clicked point
+            
+            var markerId = getMarkerUniqueId(lat, lng); // an that will be used to cache this marker in markers object.
+            var marker = new google.maps.Marker({
+                position: getLatLng(lat, lng),
+                map: map,
+                id: 'marker_' + markerId,
+                tooltipContent : 'this content should go inside the tooltip'
+            });
+            markers[markerId] = marker; // cache marker in markers object
+            
+            
+            $.ajax({
+             url:"https://maps.googleapis.com/maps/api/timezone/json?location="+lat+","+lng+"&timestamp="+(Math.round((new Date().getTime())/1000)).toString()+"&sensor=false",
+         }).done(function(response){
+             if(response.timeZoneId != null){
+                var contents = '<div><label>Latitude:</label>'+lat+'</div>' +
+                '<div><label>Longitude:</label>'+lng+'</div>' +
+                '<div><label>Timezone:</label> '+response.timeZoneName+'</div>' + 
+                '<div><label>Local time:</label>' + calcTime(response.rawOffset)+'</div>' +
+                '<div><label>UTC Time:</label>' + utcTime() + '</div>';
+                var infoWindow = new google.maps.InfoWindow({
+                    content: contents
+                });
+                infoWindow.open(map, marker);
+            }
+        });
+     });
+
+}
+
+google.maps.event.addDomListener(window, 'load', initialize);
+</script>
+</head>
+
+<body>
+
+
+    <nav role="navigation" class="navbar navbar-inverse">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" data-target="#navbarCollapse" data-toggle="collapse" class="navbar-toggle">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+            </button>
+        </div>
+        <!-- Collection of nav links, forms, and other content for toggling -->
+        <div id="navbarCollapse" class="collapse navbar-collapse">
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="#">Company</a></li>
+            </ul>
+
+            <ul class="nav navbar-nav navbar-right">
+                <li><a href="#">Our Reach</a></li>
+                <li><a href="#">Over 100 contries</a></li>
+            </ul>
+        </div>
+    </nav>    
+    
+
+    <!-- Main google map -->
+    <div id="map"></div>
+    <div id="marker-tooltip"></div>
+
+</body>
+</html>
